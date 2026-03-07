@@ -145,29 +145,29 @@
             "name": "大宰府 (だざいふ)",
             "coords": {"q": 4, "r": 2},
             "terrain": "要塞",
-            "bonus": {"def": 10, "recovery": 5},
-            "description": "九州の心臓部。占領者は全軍の士気が上昇。"
+            "bonus": {"def": 10, "atk": 0, "mov": 1, "recovery": 5},
+            "description": "九州の心臓部。高い守備力と回復力を提供。"
         },
         {
             "name": "肥後・菊池",
             "coords": {"q": 1, "r": -1},
             "terrain": "山城",
-            "bonus": {"def": 15, "recovery": 3},
-            "description": "征西府の発祥の地。南朝ユニットの生産拠点。"
+            "bonus": {"def": 15, "atk": 0, "mov": 2, "recovery": 3},
+            "description": "征西府の聖地。山がちな地形で防御に優れる。"
         },
         {
             "name": "筑後川 (大保原)",
             "coords": {"q": 3, "r": 1},
             "terrain": "大河",
-            "bonus": {"mov_cost": 2, "atk_penalty": -5},
-            "description": "九州最大の激戦地。川越しの攻撃には大幅なペナルティ。"
+            "bonus": {"def": 0, "atk": -10, "mov": 3, "recovery": 0},
+            "description": "九州最大の激戦地。川越しの攻撃にはペナルティが発生し、移動が困難。"
         },
         {
             "name": "博多",
             "coords": {"q": 4, "r": 1},
             "terrain": "港",
-            "bonus": {"gold": 10, "recovery": 2},
-            "description": "貿易の拠点。経済的な重要性が高い。"
+            "bonus": {"def": 5, "atk": 0, "mov": 1, "recovery": 2},
+            "description": "貿易の拠点。一定の防御力と経済的優位性を持つ。"
         }
     ],
     "events": [
@@ -183,5 +183,16 @@
             "impact": "南朝軍の本拠地移動、全パラメータ微減",
             "description": "今川了俊により征西府が崩壊。戦記の終盤へ。"
         }
+    ],
+    "initial_placements": [
+        { "name": "懐良親王", "q": 0, "r": 0 },
+        { "name": "菊池武光", "q": 1, "r": -1 },
+        { "name": "阿蘇惟澄", "q": 1, "r": 1 },
+        { "name": "今川了俊", "q": 5, "r": 2 },
+        { "name": "大友氏時", "q": 6, "r": 3 },
+        { "name": "足利直冬", "q": 8, "r": 0 },
+        { "name": "足利隆冬", "q": 8, "r": 1 },
+        { "name": "島津氏久", "q": 0, "r": 5 },
+        { "name": "少弐頼尚", "q": 4, "r": 3 }
     ]
 }
