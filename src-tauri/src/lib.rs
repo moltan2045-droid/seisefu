@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::collections::HashMap;
 use tauri::{AppHandle, Manager};
 use tauri::path::BaseDirectory;
 
@@ -43,6 +44,22 @@ struct Coords {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+struct TerrainType {
+    name: String,
+    color: String,
+    mov: f32,
+    def: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct MapTile {
+    q: i32,
+    r: i32,
+    #[serde(rename = "type")]
+    terrain_type: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct TerrainBonus {
     def: i32,
     atk: i32,
@@ -72,6 +89,8 @@ struct GameData {
     description: String,
     figures: Vec<Figure>,
     events: Vec<Event>,
+    terrain_types: HashMap<String, TerrainType>,
+    map_tiles: Vec<MapTile>,
     key_locations: Vec<Location>,
     initial_placements: Vec<InitialPlacement>,
 }

@@ -36,6 +36,19 @@ export interface Coords {
 // Alias for Coords as Hex (Axial Coordinate)
 export type Hex = Coords;
 
+export interface TerrainType {
+  name: string;
+  color: string;
+  mov: number;
+  def: number;
+}
+
+export interface MapTile {
+  q: number;
+  r: number;
+  type: string;
+}
+
 export interface TerrainBonus {
   def: number;
   atk: number;
@@ -62,6 +75,8 @@ export interface GameData {
   description: string;
   figures: Figure[];
   events: Event[];
+  terrain_types: Record<string, TerrainType>;
+  map_tiles: MapTile[];
   key_locations: Location[];
   initial_placements: InitialPlacement[];
 }

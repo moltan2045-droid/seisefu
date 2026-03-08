@@ -12,10 +12,11 @@ interface HexGridProps {
   gameData: GameData | null;
   units: Unit[];
   selectedUnitId: number | null;
+  reachableHexes: Hex[];
   onHexClick: (hex: Hex) => void;
 }
 
-export function HexGrid({ gameData, units, selectedUnitId, onHexClick }: HexGridProps) {
+export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHexClick }: HexGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -27,21 +28,36 @@ export function HexGrid({ gameData, units, selectedUnitId, onHexClick }: HexGrid
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw Map
-    for (let q = -5; q <= 10; q++) {
-      for (let r = -5; r <= 10; r++) {
-        if (Math.abs(q) + Math.abs(r) + Math.abs(-q - r) < 20) {
-          let color = "#f9f9f9";
-          const loc = gameData.key_locations.find(l => l.coords.q === q && l.coords.r === r);
-          if (loc) color = "#eee";
-          drawHex(ctx, q, r, color, "fill");
-          
-          if (loc) {
-            const center = hexToPixel(q, r);
-            ctx.fillStyle = "#999";
-            ctx.font = "8px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(loc.name, center.x, center.y + 15);
-          }
+    for (let q = -2; q <= 8; q++) {
+      for (let r = -2; r <= 8; r++) {
+        // Draw tiles within a sensible range for Kyushu
+        const tile = gameData.map_tiles.find(t => t.q === q && t.r === r);
+        // If not in map_tiles, it's sea (default for Kyushu surroundings)
+        const terrainType = tile ? tile.type : "sea";
+        const terrain = gameData.terrain_types[terrainType];
+        let color = terrain?.color || "#81d4fa";
+
+        const loc = gameData.key_locations.find(l => l.coords.q === q && l.coords.r === r);
+        if (loc) color = "#ffeb3b"; // Cities/Forts in yellow
+        
+        drawHex(ctx, q, r, color, "fill");
+        ctx.strokeStyle = "rgba(0,0,0,0.05)";
+        drawHex(ctx, q, r, "", "stroke");
+
+        // Draw Reachable Highlight
+        const isReachable = reachableHexes.some(h => h.q === q && h.r === r);
+        if (isReachable) {
+          ctx.globalAlpha = 0.4;
+          drawHex(ctx, q, r, "#00bcd4", "fill");
+          ctx.globalAlpha = 1.0;
+        }
+        
+        if (loc) {
+          const center = hexToPixel(q, r);
+          ctx.fillStyle = "#333";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(loc.name, center.x, center.y + 18);
         }
       }
     }

@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import type { GameData, Unit, Turn, Hex } from "./types";
-import { getHexDistance } from "./utils/hexUtils";
+import { getHexDistance, getReachableHexes } from "./utils/hexUtils";
 import { HexGrid } from "./components/HexGrid";
 import { UnitInfo } from "./components/UnitInfo";
 import { GameLog } from "./components/GameLog";
@@ -13,10 +13,46 @@ function App() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const [reachableHexes, setReachableHexes] = useState<Hex[]>([]);
   const [turn, setTurn] = useState<Turn>("South");
   const [log, setLog] = useState<string>("ゲーム開始：南朝（赤）のターンです。");
 
   const { decideAction } = useAI(units, gameData);
+
+  const getTerrainEffect = useCallback((q: number, r: number) => {
+    if (!gameData) return { def: 0, mov: 1, name: "平地" };
+    const loc = gameData.key_locations.find(l => l.coords.q === q && l.coords.r === r);
+    if (loc) return { def: loc.bonus.def, mov: loc.bonus.mov, name: loc.name };
+
+    const tile = gameData.map_tiles.find(t => t.q === q && t.r === r);
+    const terrain = tile ? gameData.terrain_types[tile.type] : gameData.terrain_types["plain"];
+    return {
+      def: terrain?.def || 0,
+      mov: terrain?.mov || 1,
+      name: terrain?.name || "平地"
+    };
+  }, [gameData]);
+
+  useEffect(() => {
+    if (selectedUnitId !== null) {
+      const unit = units.find(u => u.id === selectedUnitId);
+      if (unit && !unit.hasActed) {
+        const movement = unit.figure.unit_stats?.mov || 3;
+        const otherUnitsHexes = units.filter(u => u.id !== selectedUnitId).map(u => u.hex);
+        const reachable = getReachableHexes(
+          unit.hex, 
+          movement, 
+          (h) => getTerrainEffect(h.q, h.r).mov,
+          otherUnitsHexes
+        );
+        setReachableHexes(reachable);
+      } else {
+        setReachableHexes([]);
+      }
+    } else {
+      setReachableHexes([]);
+    }
+  }, [selectedUnitId, units, getTerrainEffect]);
 
   useEffect(() => {
     async function loadData() {
@@ -54,6 +90,40 @@ function App() {
     }
   }, [turn, units]);
 
+  const performAttack = (attacker: Unit, defender: Unit) => {
+    const defenderEffect = getTerrainEffect(defender.hex.q, defender.hex.r);
+
+    let atkBonus = 0;
+    let defBonus = defenderEffect.def;
+
+    const naofuyu = units.find(u => u.figure.name.includes("足利直冬"));
+    if (naofuyu && attacker.figure.faction.includes("北朝") && getHexDistance(attacker.hex, naofuyu.hex) <= 3) {
+      atkBonus -= 15;
+      setLog("直冬の遺恨！ 北朝の攻撃力が低下中。");
+    }
+    if (attacker.figure.name.includes("島津氏久") && attacker.hp <= attacker.maxHp / 2) {
+      atkBonus += 10;
+      setLog("薩摩隼人の魂！");
+    }
+    const damage = Math.max(1, (attacker.attack + atkBonus) - (defender.defense + defBonus) + Math.floor(Math.random() * 5));
+    const newHp = Math.max(0, defender.hp - damage);
+    
+    let logMsg = `${attacker.figure.name}の攻撃！ ${defender.figure.name}に${damage}ダメージ。`;
+    if (defBonus !== 0) logMsg += ` (${defenderEffect.name}の地形で防御${defBonus > 0 ? "+" : ""}${defBonus})`;
+    setLog(logMsg);
+
+    setUnits(units.map(u => {
+      if (u.id === defender.id) return { ...u, hp: newHp };
+      if (u.id === attacker.id) return { ...u, hasActed: true };
+      return u;
+    }).filter(u => u.hp > 0));
+  };
+
+  const performMove = (actor: Unit, hex: Hex) => {
+    setUnits(units.map(u => u.id === actor.id ? { ...u, hex, hasActed: true } : u));
+    setLog(`[${actor.figure.name}] が移動。`);
+  };
+
   const executeAITurn = () => {
     const currentAIUnits = units.filter(u => {
       const faction = u.figure.faction;
@@ -72,68 +142,12 @@ function App() {
     const action = decideAction(actor, units);
 
     if (action.type === "attack" && action.target) {
-      performAttack(actor, action.target);
+      performAttack(actor, action.target as Unit);
     } else if (action.type === "move" && action.targetHex) {
       performMove(actor, action.targetHex);
     } else {
       setUnits(units.map(u => u.id === actor.id ? { ...u, hasActed: true } : u));
     }
-  };
-
-  const performAttack = (attacker: Unit, defender: Unit) => {
-    const attackerLoc = gameData?.key_locations.find(l => l.coords.q === attacker.hex.q && l.coords.r === attacker.hex.r);
-    const defenderLoc = gameData?.key_locations.find(l => l.coords.q === defender.hex.q && l.coords.r === defender.hex.r);
-
-    let atkBonus = attackerLoc?.bonus.atk || 0;
-    let defBonus = defenderLoc?.bonus.def || 0;
-
-    const naofuyu = units.find(u => u.figure.name.includes("足利直冬"));
-    if (naofuyu && attacker.figure.faction.includes("北朝") && getHexDistance(attacker.hex, naofuyu.hex) <= 3) {
-      atkBonus -= 15;
-      setLog("直冬の遺恨！ 北朝の攻撃力が低下中。");
-    }
-    if (attacker.figure.name.includes("島津氏久") && attacker.hp <= attacker.maxHp / 2) {
-      atkBonus += 10;
-      setLog("薩摩隼人の魂！");
-    }
-    const damage = Math.max(1, (attacker.attack + atkBonus) - (defender.defense + defBonus) + Math.floor(Math.random() * 5));
-    const newHp = Math.max(0, defender.hp - damage);
-    
-    let logMsg = `${attacker.figure.name}の攻撃！ ${defender.figure.name}に${damage}ダメージ。`;
-    if (defenderLoc) logMsg += ` (${defenderLoc.name}の地形で防御+${defenderLoc.bonus.def})`;
-    setLog(logMsg);
-
-    setUnits(units.map(u => {
-      if (u.id === defender.id) return { ...u, hp: newHp };
-      if (u.id === attacker.id) return { ...u, hasActed: true };
-      return u;
-    }).filter(u => u.hp > 0));
-  };
-
-  const performMove = (actor: Unit, hex: Hex) => {
-    const targetLoc = gameData?.key_locations.find(l => l.coords.q === hex.q && l.coords.r === hex.r);
-    
-    // 川などの移動コストが高い地形への進入判定 (簡易的な成否判定)
-    if (targetLoc && targetLoc.bonus.mov > 2) {
-      let dice = Math.floor(Math.random() * 6) + 1;
-      setLog(`[${actor.figure.name}] ${targetLoc.name}への進入ダイス：${dice}`);
-      
-      if (actor.figure.name.includes("足利隆冬") && dice <= 2) {
-        dice = Math.floor(Math.random() * 6) + 1;
-        setLog(`鎮西の執念！ 振り直し：${dice}`);
-      }
-      
-      if (dice <= 2) {
-        setLog(`[${actor.figure.name}] ${targetLoc.name}への進入失敗。`);
-        setUnits(units.map(u => u.id === actor.id ? { ...u, hasActed: true } : u));
-        return;
-      } else {
-        setLog(`[${actor.figure.name}] ${targetLoc.name}へ進出成功！`);
-      }
-    }
-
-    setUnits(units.map(u => u.id === actor.id ? { ...u, hex, hasActed: true } : u));
-    setLog(`[${actor.figure.name}] が移動。`);
   };
 
   const handleHexClick = (hex: Hex) => {
@@ -151,13 +165,21 @@ function App() {
 
     if (selectedUnit) {
       if (clickedUnit?.id === selectedUnit.id) { setSelectedUnitId(null); return; }
+      
+      const isReachable = reachableHexes.some(h => h.q === hex.q && h.r === hex.r);
       const dist = getHexDistance(selectedUnit.hex, hex);
-      if (dist > 1) { setLog("射程外です。"); return; }
+
       if (clickedUnit) {
-        if (clickedUnit.figure.faction.includes("南朝")) { setLog("味方は攻撃できません。"); return; }
+        if (clickedUnit.figure.faction.includes("南朝")) { 
+          setSelectedUnitId(clickedUnit.id); 
+          setLog(`${clickedUnit.figure.name}を選択。`); 
+          return; 
+        }
+        if (dist > 1) { setLog("射程外です。"); return; }
         performAttack(selectedUnit, clickedUnit);
         setSelectedUnitId(null);
       } else {
+        if (!isReachable) { setLog("移動可能範囲外です。"); return; }
         performMove(selectedUnit, hex);
         setSelectedUnitId(null);
       }
@@ -170,6 +192,7 @@ function App() {
     setTurn(nextTurn);
     setUnits(units.map(u => ({ ...u, hasActed: false })));
     setSelectedUnitId(null);
+    setReachableHexes([]);
   };
 
   return (
@@ -186,6 +209,7 @@ function App() {
         gameData={gameData}
         units={units}
         selectedUnitId={selectedUnitId}
+        reachableHexes={reachableHexes}
         onHexClick={handleHexClick}
       />
 
