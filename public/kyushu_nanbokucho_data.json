@@ -1,0 +1,273 @@
+{
+    "title": "九州南北朝ヘックス戦記・マスターデータ",
+    "description": "征西府の興亡を完全再現するための、軍事・地理・相関の統合データベース",
+    "figures": [
+        {
+            "name": "懐良親王 (かねよししんのう)",
+            "faction": "南朝 (征西府)",
+            "role": "征西大将軍 (征西将軍宮)",
+            "unit_stats": {"type": "指揮官", "hp": 80, "atk": 15, "def": 25, "mov": 3, "rng": 1},
+            "special_skill": "日本国王の威光 (周囲2マスの味方の防御+10)",
+            "relationships": [
+                {"target": "菊池武光", "type": "主従・信頼", "score": 100, "description": "軍事的な右腕。"},
+                {"target": "今川了俊", "type": "宿敵", "score": -100, "description": "征西府を滅ぼした敵。"}
+            ],
+            "actions": ["1368年に明から日本国王に封じられる。", "大宰府を拠点に九州を統一。"],
+            "stats_hint": "高防御・高支援の総大将ユニット。"
+        },
+        {
+            "name": "菊池武光 (きくち たけみつ)",
+            "faction": "南朝 (征西府)",
+            "role": "肥後守・征西府軍事的主柱",
+            "unit_stats": {"type": "強襲騎馬", "hp": 100, "atk": 35, "def": 15, "mov": 5, "rng": 1},
+            "special_skill": "菊池千本槍 (移動後の攻撃力+50%)",
+            "relationships": [
+                {"target": "懐良親王", "type": "主従", "score": 100, "description": "絶対の忠誠。"},
+                {"target": "少弐頼尚", "type": "宿敵", "score": -95, "description": "筑後川での決着。"}
+            ],
+            "actions": ["筑後川の戦いで北朝軍を殲滅。", "神速の軍を率いて九州を席巻。"],
+            "stats_hint": "最強の攻撃性能を誇るエースユニット。"
+        },
+        {
+            "name": "今川了俊 (いまがわ りょうしゅん)",
+            "faction": "北朝 (室町幕府)",
+            "role": "九州探題",
+            "unit_stats": {"type": "軍師", "hp": 70, "atk": 20, "def": 20, "mov": 3, "rng": 2},
+            "special_skill": "探題の工作 (隣接する敵の移動を封じる)",
+            "relationships": [
+                {"target": "懐良親王", "type": "宿敵", "score": -100, "description": "戦略で親王を追い詰める。"},
+                {"target": "大友氏泰", "type": "協力", "score": 70, "description": "軍事支援の要。"}
+            ],
+            "actions": ["1372年に大宰府を奪還。", "在地勢力を切り崩す外交戦を展開。"],
+            "stats_hint": "搦め手を得意とする戦略家ユニット。"
+        },
+        {
+            "name": "松浦左衛門大夫 (まつら さえもんのたいふ)",
+            "faction": "松浦党 (独立水軍)",
+            "role": "肥前松浦党首領・倭寇指導者",
+            "unit_stats": {"type": "倭寇水軍", "hp": 75, "atk": 30, "def": 15, "mov": 6, "rng": 1},
+            "special_skill": "三島渡海 (海上での移動コストを常に1にする)",
+            "relationships": [
+                {"target": "懐良親王", "type": "外交協力", "score": 40, "description": "征西府の海軍力を支える。"},
+                {"target": "今川了俊", "type": "警戒", "score": -30, "description": "幕府による統制を嫌う。"}
+            ],
+            "actions": ["東シナ海を席巻し、高麗や明へ遠征。", "状況に応じて征西府の海上輸送を助ける。"],
+            "stats_hint": "圧倒的な海上機動力を持つ。AIは沿岸部の手薄な拠点を狙う。"
+        },
+        {
+            "name": "五条良長 (ごじょう よしなが)",
+            "faction": "南朝 (征西府)",
+            "role": "征西府事務総理 (公家)",
+            "unit_stats": {"type": "文官", "hp": 50, "atk": 5, "def": 10, "mov": 2, "rng": 1},
+            "special_skill": "政務の補佐 (隣接する味方の行動を再開させる)",
+            "relationships": [
+                {"target": "懐良親王", "type": "主従", "score": 95, "description": "親王の知恵袋。"}
+            ],
+            "actions": ["征西府の行政組織を構築。", "戦時下においても軍政を支える。"],
+            "stats_hint": "強力な再行動スキルを持つサポートユニット。"
+        },
+        {
+            "name": "少弐頼尚 (しょうに よりひさ)",
+            "faction": "在地独立勢力 (中立/日和見)",
+            "role": "筑前守護",
+            "unit_stats": {"type": "守護武士", "hp": 85, "atk": 25, "def": 20, "mov": 4, "rng": 1},
+            "ai_archetype": "defender",
+            "special_skill": "水際での意地 (上陸を試みる敵に対しDEF+20)",
+            "relationships": [
+                {"target": "菊池武光", "type": "宿敵", "score": -95, "description": "九州の覇権争い。"},
+                {"target": "足利隆冬", "type": "警戒", "score": -30, "description": "勢力圏を脅かす存在。"}
+            ],
+            "actions": ["筑後川の戦いで敗北するも、勢力を保ち続けた。", "状況に応じて南北どちらにも付く。"],
+            "stats_hint": "地形効果を活かす防衛型ユニット。AIは自領防衛を優先する。"
+        },
+        {
+            "name": "足利直冬 (あしかが ただふゆ)",
+            "faction": "直冬派 (第三勢力)",
+            "role": "鎮西探題・足利氏庶流総帥",
+            "unit_stats": {"type": "軍略家", "hp": 85, "atk": 26, "def": 22, "mov": 3, "rng": 2},
+            "ai_archetype": "strategist",
+            "special_skill": "観応 service (周囲3マスの敵「北朝」ユニットのATKを-15する)",
+            "relationships": [
+                {"target": "懐良親王", "type": "一時的協力", "score": 40, "description": "打倒尊氏・義詮のため結ぶ。"},
+                {"target": "今川了俊", "type": "不倶戴天", "score": -100, "description": "幕府本家からの刺客とみなす。"}
+            ],
+            "actions": ["観応の擾乱を受け九州へ下向。", "九州の有力国人を味方につけ、独自の探題府を構築。"],
+            "stats_hint": "広範囲のデバフを持つ戦略家。AIは北朝勢力を優先的に弱体化させる。"
+        },
+        {
+            "name": "阿蘇惟澄 (あそ これずみ)",
+            "faction": "南朝 (征西府)",
+            "role": "阿蘇大宮司",
+            "unit_stats": {"type": "神職武将", "hp": 70, "atk": 22, "def": 25, "mov": 3, "rng": 1},
+            "ai_archetype": "support",
+            "special_skill": "阿蘇の神風 (海上にいる際、敵の遠距離攻撃を50%で無効化)",
+            "relationships": [
+                {"target": "菊池武光", "type": "盟友", "score": 100, "description": "肥後を共に守る。"}
+            ],
+            "actions": ["阿蘇神社の神威を背負い参戦。", "菊池氏と協力して南朝の地盤を固める。"],
+            "stats_hint": "高い防御力と海上での生存能力を持つ。"
+        },
+        {
+            "name": "大友氏時 (おおとも うじとき)",
+            "faction": "北朝 (幕府)",
+            "role": "豊後守護",
+            "unit_stats": {"type": "重装武士", "hp": 90, "atk": 24, "def": 28, "mov": 3, "rng": 1},
+            "ai_archetype": "defender",
+            "special_skill": "豊後の鉄壁 (城・拠点にいる際、被ダメージを30%軽減)",
+            "relationships": [
+                {"target": "今川了俊", "type": "協力", "score": 85, "description": "九州探題を軍事的に支援。"}
+            ],
+            "actions": ["豊後を拠点に北朝方として奮戦。", "今川了俊の九州下向を支える。"],
+            "stats_hint": "極めて高い耐久力を誇る守備の要。"
+        },
+        {
+            "name": "島津氏久 (しまづ うじひさ)",
+            "faction": "薩摩独立勢力 (独立)",
+            "role": "薩摩守護",
+            "unit_stats": {"type": "猛将", "hp": 95, "atk": 32, "def": 22, "mov": 4, "rng": 1},
+            "ai_archetype": "aggressive",
+            "special_skill": "薩摩隼人の魂 (HPが50%以下の時、ATKが+10)",
+            "relationships": [
+                {"target": "今川了俊", "type": "不信", "score": -40, "description": "探題の介入を嫌う。"}
+            ],
+            "actions": ["南九州で強大な勢力を維持。", "独自の判断で南北両陣営と距離を置く。"],
+            "stats_hint": "単体戦闘力が非常に高い猛将。"
+        }
+    ],
+    "terrain_types": {
+        "plain": { "name": "平地", "color": "#e8f5e9", "mov": 1, "def": 0 },
+        "mountain": { "name": "山地", "color": "#8d6e63", "mov": 2, "def": 10 },
+        "river": { "name": "大河", "color": "#bbdefb", "mov": 3, "def": -5 },
+        "forest": { "name": "森", "color": "#a5d6a7", "mov": 2, "def": 5 },
+        "sea": { "name": "海", "color": "#81d4fa", "mov": 1, "def": -10 }
+    },
+    "map_tiles": [
+        { "q": 4, "r": -2, "type": "plain" }, { "q": 5, "r": -2, "type": "sea" }, { "q": 2, "r": -2, "type": "mountain" },
+        { "q": 3, "r": -1, "type": "sea" }, { "q": 4, "r": -1, "type": "sea" }, { "q": 5, "r": -1, "type": "sea" }, { "q": 1, "r": -1, "type": "plain" },
+        { "q": 2, "r": 0, "type": "sea" }, { "q": 3, "r": 0, "type": "plain" }, { "q": 4, "r": 0, "type": "plain" }, { "q": 5, "r": 0, "type": "plain" }, { "q": 6, "r": 0, "type": "sea" }, { "q": 1, "r": 0, "type": "sea" },
+        { "q": 2, "r": 1, "type": "plain" }, { "q": 3, "r": 1, "type": "plain" }, { "q": 4, "r": 1, "type": "plain" }, { "q": 5, "r": 1, "type": "mountain" }, { "q": 6, "r": 1, "type": "plain" }, { "q": 1, "r": 1, "type": "plain" },
+        { "q": 2, "r": 2, "type": "plain" }, { "q": 3, "r": 2, "type": "plain" }, { "q": 4, "r": 2, "type": "mountain" }, { "q": 5, "r": 2, "type": "plain" }, { "q": 0, "r": 2, "type": "mountain" },
+        { "q": 1, "r": 3, "type": "sea" }, { "q": 2, "r": 3, "type": "plain" }, { "q": 3, "r": 3, "type": "plain" }, { "q": 4, "r": 3, "type": "plain" },
+        { "q": 1, "r": 4, "type": "plain" }, { "q": 2, "r": 4, "type": "plain" }, { "q": 3, "r": 4, "type": "plain" },
+        { "q": 0, "r": 6, "type": "plain" }, { "q": 1, "r": 5, "type": "plain" }, { "q": 2, "r": 5, "type": "plain" },
+        { "q": 1, "r": 6, "type": "sea" }
+    ],
+    "key_locations": [
+        {
+            "name": "赤間関 (下関)",
+            "coords": {"q": 4, "r": -2},
+            "terrain": "港",
+            "bonus": {"def": 5, "atk": 5, "mov": 1, "recovery": 2},
+            "description": "本州への玄関口。北朝軍の補給拠点。"
+        },
+        {
+            "name": "対馬",
+            "coords": {"q": 2, "r": -2},
+            "terrain": "島",
+            "bonus": {"def": 10, "atk": 0, "mov": 2, "recovery": 1},
+            "description": "倭寇の中継基地。険しい地形。"
+        },
+        {
+            "name": "壱岐",
+            "coords": {"q": 1, "r": -1},
+            "terrain": "島",
+            "bonus": {"def": 5, "atk": 0, "mov": 1, "recovery": 1},
+            "description": "九州と対馬を結ぶ島。"
+        },
+        {
+            "name": "松浦 (平戸)",
+            "coords": {"q": 1, "r": 1},
+            "terrain": "港",
+            "bonus": {"def": 8, "atk": 5, "mov": 1, "recovery": 3},
+            "description": "松浦党の本拠地。水軍の町。"
+        },
+        {
+            "name": "五島列島",
+            "coords": {"q": 0, "r": 2},
+            "terrain": "島",
+            "bonus": {"def": 12, "atk": 10, "mov": 2, "recovery": 5},
+            "description": "倭寇の最大拠点の一つ。要塞化している。"
+        },
+        {
+            "name": "大宰府",
+            "coords": {"q": 4, "r": 0},
+            "terrain": "要塞",
+            "bonus": {"def": 12, "atk": 0, "mov": 1, "recovery": 5},
+            "description": "九州の政治的中心地。現在は南朝の拠点。"
+        },
+        {
+            "name": "博多",
+            "coords": {"q": 3, "r": 0},
+            "terrain": "港",
+            "bonus": {"def": 5, "atk": 0, "mov": 1, "recovery": 2},
+            "description": "商業の中心。港湾都市。"
+        },
+        {
+            "name": "菊池",
+            "coords": {"q": 3, "r": 2},
+            "terrain": "山城",
+            "bonus": {"def": 15, "atk": 0, "mov": 2, "recovery": 3},
+            "description": "南朝の軍事的拠点。"
+        },
+        {
+            "name": "水島",
+            "coords": {"q": 2, "r": 2},
+            "terrain": "港",
+            "bonus": {"def": 5, "atk": 0, "mov": 1, "recovery": 2},
+            "description": "肥後の重要港。今川了俊が陣を敷いた地。"
+        },
+        {
+            "name": "筑後川",
+            "coords": {"q": 3, "r": 1},
+            "terrain": "大河",
+            "bonus": {"def": 0, "atk": -10, "mov": 3, "recovery": 0},
+            "description": "南北の勢力がぶつかる激戦地。"
+        },
+        {
+            "name": "府内 (大分)",
+            "coords": {"q": 6, "r": 1},
+            "terrain": "平城",
+            "bonus": {"def": 8, "atk": 0, "mov": 1, "recovery": 3},
+            "description": "大友氏の本拠地。"
+        },
+        {
+            "name": "鹿児島",
+            "coords": {"q": 1, "r": 5},
+            "terrain": "山城",
+            "bonus": {"def": 12, "atk": 0, "mov": 2, "recovery": 4},
+            "description": "島津氏の本拠地。"
+        },
+        {
+            "name": "坊津",
+            "coords": {"q": 0, "r": 6},
+            "terrain": "港",
+            "bonus": {"def": 5, "atk": 0, "mov": 1, "recovery": 5},
+            "description": "南九州の国際貿易港。島津氏の財源。"
+        }
+    ],
+    "events": [
+        {
+            "year": 1366,
+            "name": "高麗使節の来訪",
+            "impact": "征西府の外交的地位向上、倭寇鎮圧要請",
+            "description": "高麗の使節が懐良親王を「日本国王」と認め、倭寇の取り締まりを依頼。"
+        },
+        {
+            "year": 1359,
+            "name": "筑後川の戦い",
+            "impact": "南朝軍のATK一時上昇、北朝軍のMOV低下",
+            "description": "征西府が九州の覇権を握った最大のターニングポイント。"
+        }
+    ],
+    "initial_placements": [
+        { "name": "懐良親王", "q": 4, "r": 0 },
+        { "name": "菊池武光", "q": 3, "r": 2 },
+        { "name": "松浦左衛門大夫", "q": 1, "r": 1 },
+        { "name": "阿蘇惟澄", "q": 4, "r": 3 },
+        { "name": "少弐頼尚", "q": 2, "r": 1 },
+        { "name": "今川了俊", "q": 4, "r": -2 },
+        { "name": "大友氏時", "q": 6, "r": 1 },
+        { "name": "足利直冬", "q": 5, "r": 2 },
+        { "name": "島津氏久", "q": 1, "r": 5 }
+    ]
+}

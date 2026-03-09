@@ -21,11 +21,11 @@ function App() {
 
   const getTerrainEffect = useCallback((q: number, r: number) => {
     if (!gameData) return { def: 0, mov: 1, name: "平地" };
-    const loc = gameData.key_locations.find(l => l.coords.q === q && l.coords.r === r);
-    if (loc) return { def: loc.bonus.def, mov: loc.bonus.mov, name: loc.name };
+    const loc = (gameData.key_locations || []).find(l => l.coords.q === q && l.coords.r === r);
+    if (loc) return { def: (loc.bonus as any).def || 0, mov: (loc.bonus as any).mov || 1, name: loc.name };
 
-    const tile = gameData.map_tiles.find(t => t.q === q && t.r === r);
-    const terrain = tile ? gameData.terrain_types[tile.type] : gameData.terrain_types["plain"];
+    const tile = (gameData.map_tiles || []).find(t => t.q === q && t.r === r);
+    const terrain = (tile && gameData.terrain_types) ? gameData.terrain_types[tile.type] : { name: "平地", def: 0, mov: 1 };
     return {
       def: terrain?.def || 0,
       mov: terrain?.mov || 1,
@@ -52,13 +52,36 @@ function App() {
     } else {
       setReachableHexes([]);
     }
-  }, [selectedUnitId, units, getTerrainEffect]);
+  }, [selectedUnitId, units.length, getTerrainEffect]); // units.length に変更
 
   useEffect(() => {
     async function loadData() {
       try {
-        const data: GameData = await invoke("get_game_data");
-        setGameData(data);
+        let data: GameData;
+        try {
+          // Tauri環境（デスクトップアプリ）の場合
+          data = await invoke("get_game_data");
+        } catch (e) {
+          // ブラウザのみの場合
+          console.log("Tauri invoke failed, falling back to fetch...", e);
+          const response = await fetch("/kyushu_nanbokucho_data.json");
+          data = await response.json();
+        }
+        
+        const defaultTerrainTypes = {
+          "plain": { name: "平地", color: "#aed581", mov: 1, def: 0 },
+          "mountain": { name: "山岳", color: "#6d4c41", mov: 3, def: 20 },
+          "forest": { name: "森林", color: "#2e7d32", mov: 2, def: 10 },
+          "sea": { name: "海", color: "#81d4fa", mov: 5, def: 0 },
+          "river": { name: "川", color: "#4fc3f7", mov: 2, def: -5 }
+        };
+
+        const finalData = {
+          ...data,
+          terrain_types: { ...defaultTerrainTypes, ...(data.terrain_types || {}) }
+        };
+        
+        setGameData(finalData);
         const newUnits: Unit[] = [];
         const createUnit = (name: string, q: number, r: number, id: number) => {
           const fig = data.figures.find(f => f.name.includes(name));
@@ -70,25 +93,35 @@ function App() {
             hasActed: false
           };
         };
-        data.initial_placements.forEach((p, i) => {
+        (data.initial_placements || []).forEach((p, i) => {
           const u = createUnit(p.name, p.q, p.r, i + 1);
           if (u) newUnits.push(u);
         });
         setUnits(newUnits);
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Data loading error:", e); }
     }
     loadData();
   }, []);
 
   // --- AI Routine ---
   useEffect(() => {
+    // プレイヤー以外のターンの場合
     if (turn !== "South") {
+      // 未行動の勢力ユニットがいるか確認
+      const hasUnactedUnit = units.some(u => {
+        const faction = u.figure.faction;
+        return (turn === "North" && faction.includes("北朝")) ||
+               (turn === "Third" && faction.includes("直冬")) ||
+               (turn === "Independent" && (faction.includes("独立") || faction.includes("薩摩")));
+      });
+
+      // 未行動ユニットがいる場合、またはターン終了が必要な場合
       const aiTimer = setTimeout(() => {
         executeAITurn();
-      }, 1000);
+      }, 800); // 思考時間 0.8s
       return () => clearTimeout(aiTimer);
     }
-  }, [turn, units]);
+  }, [turn, units]); // units を監視対象に戻す
 
   const performAttack = (attacker: Unit, defender: Unit) => {
     const defenderEffect = getTerrainEffect(defender.hex.q, defender.hex.r);

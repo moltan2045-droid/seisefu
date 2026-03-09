@@ -31,13 +31,39 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
     for (let q = -2; q <= 8; q++) {
       for (let r = -2; r <= 8; r++) {
         // Draw tiles within a sensible range for Kyushu
-        const tile = gameData.map_tiles.find(t => t.q === q && t.r === r);
-        // If not in map_tiles, it's sea (default for Kyushu surroundings)
-        const terrainType = tile ? tile.type : "sea";
-        const terrain = gameData.terrain_types[terrainType];
-        let color = terrain?.color || "#81d4fa";
+        const tile = (gameData.map_tiles || []).find(t => t.q === q && t.r === r);
+        
+        // --- 九州の地形生成ロジック ---
+        // データにタイル情報がない場合、座標から九州の形状を近似する
+        let terrainType = "sea";
+        if (tile) {
+          terrainType = tile.type;
+        } else {
+          // r座標(北から南)ごとに陸地(q)の範囲を指定して九州を形作る
+          const landRanges: Record<number, [number, number]> = {
+            [-2]: [4, 5], // 豊前・国東
+            [-1]: [3, 5], // 筑前・豊前
+            [0]:  [3, 5], // 筑前
+            [1]:  [1, 6], // 松浦〜豊後
+            [2]:  [1, 5], // 長崎〜肥後〜筑紫
+            [3]:  [1, 4], // 天草〜肥後
+            [4]:  [1, 3], // 肥後南部・日向
+            [5]:  [0, 2], // 薩摩・大隅
+            [6]:  [0, 1]  // 坊津・大隅半島
+          };
 
-        const loc = gameData.key_locations.find(l => l.coords.q === q && l.coords.r === r);
+          const range = landRanges[r];
+          if (range && q >= range[0] && q <= range[1]) {
+            terrainType = "plain";
+          } else {
+            terrainType = "sea";
+          }
+        }
+        
+        const terrain = (gameData.terrain_types || {})[terrainType];
+        let color = terrain?.color || (terrainType === "sea" ? "#81d4fa" : "#aed581");
+
+        const loc = (gameData.key_locations || []).find(l => l.coords.q === q && l.coords.r === r);
         if (loc) color = "#ffeb3b"; // Cities/Forts in yellow
         
         drawHex(ctx, q, r, color, "fill");
