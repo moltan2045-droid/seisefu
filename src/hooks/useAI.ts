@@ -1,14 +1,28 @@
-import { Unit, GameData, Coords } from "../types";
-import { getHexDistance, getNeighbors } from "../utils/hexUtils";
+import { Unit, GameData, Coords, Season } from "../types";
+import { getHexDistance, getNeighbors, getReachableHexes } from "../utils/hexUtils";
 
-export const useAI = (_units: Unit[], gameData: GameData | null) => {
+export const useAI = (allUnits: Unit[], gameData: GameData | null, currentMonth: number) => {
   
   const findBestTarget = (actor: Unit, enemies: Unit[]) => {
     const faction = actor.figure.faction;
     const isWako = faction.includes("松浦党") || faction.includes("独立");
+    const isAutumn = currentMonth === 9 || currentMonth === 10;
+    const isPlanting = currentMonth === 5 || currentMonth === 6;
+
+    // 1. 低HPまたは秋季の場合、「刈田（Karita）」を検討
+    if (actor.hp < (actor.maxHp * 0.4) || isAutumn) {
+        const foodSources = gameData?.map_tiles.filter(t => t.type === "plain") || [];
+        if (foodSources.length > 0) {
+            const bestField = [...foodSources]
+                .sort((a, b) => getHexDistance(actor.hex, a) - getHexDistance(actor.hex, b))[0];
+            if (getHexDistance(actor.hex, bestField) < 3) {
+                return { type: "location", target: { q: bestField.q, r: bestField.r }, action: "karita" };
+            }
+        }
+    }
 
     if (isWako && gameData) {
-      // 倭寇思考：最も近い「港」または「島」の拠点を狙う（そこに敵がいてもいなくても）
+      // 倭寇思考：最も近い「港」または「島」の拠点を狙う
       const coastalTargets = gameData.key_locations.filter(l => 
         l.terrain === "港" || l.terrain === "島"
       );
@@ -17,7 +31,6 @@ export const useAI = (_units: Unit[], gameData: GameData | null) => {
           getHexDistance(actor.hex, a.coords) - getHexDistance(actor.hex, b.coords)
         )[0];
         
-        // その港に敵がいるか確認
         const enemyOnPort = enemies.find(e => e.hex.q === bestPort.coords.q && e.hex.r === bestPort.coords.r);
         if (enemyOnPort) return { type: "unit", target: enemyOnPort };
         return { type: "location", target: bestPort.coords };
@@ -26,8 +39,8 @@ export const useAI = (_units: Unit[], gameData: GameData | null) => {
 
     if (enemies.length === 0) return null;
 
-    // アーキタイプに応じたターゲット選定
-    const archetype = actor.figure.ai_archetype || "default";
+    // 農繁期（田植え・稲刈り）は、防衛的なターゲット選定
+    const archetype = (isPlanting || isAutumn) ? "defender" : (actor.figure.ai_archetype || "default");
 
     switch (archetype) {
       case "aggressive":
@@ -45,9 +58,9 @@ export const useAI = (_units: Unit[], gameData: GameData | null) => {
     }
   };
 
-  const decideAction = (actor: Unit, allUnits: Unit[]) => {
+  const decideAction = (actor: Unit, units: Unit[]) => {
     const factionPrefix = actor.figure.faction.split(" ")[0];
-    const enemies = allUnits.filter(u => !u.figure.faction.startsWith(factionPrefix));
+    const enemies = units.filter(u => !u.figure.faction.startsWith(factionPrefix));
     
     const targetResult = findBestTarget(actor, enemies);
     if (!targetResult) return { type: "wait" };
@@ -62,39 +75,29 @@ export const useAI = (_units: Unit[], gameData: GameData | null) => {
       return { type: "attack", target: targetResult.target };
     }
 
-    // 2. 移動：ターゲットに近づく
-    // アーキタイプが defender の場合、自分の拠点から離れすぎないようにする
-    const archetype = actor.figure.ai_archetype || "default";
-    if (archetype === "defender") {
-      const homeBase = gameData?.key_locations.find(l => l.name.includes(factionPrefix))?.coords;
-      if (homeBase && getHexDistance(actor.hex, homeBase) > 3) {
-          return { type: "move", targetHex: homeBase };
-      }
+    // 2. 刈田アクション（特定のヘックスに到達して回復）
+    if ((targetResult as any).action === "karita" && dist === 0) {
+        return { type: "karita" };
     }
 
-    // ターゲットに近づく最適な隣接ヘックスを探す
+    // 3. 移動：強行軍 (Forced March) の検討
+    // 通常の移動距離
+    const normalMov = actor.figure.unit_stats?.mov || 3;
+    const canForcedMarch = actor.hp > (actor.maxHp * 0.6); // 体力がある時のみ可能
+    
+    // 目的地に近づくための移動
     const neighbors = getNeighbors(actor.hex).filter(n => 
-      !allUnits.some(u => u.hex.q === n.q && u.hex.r === n.r)
+      !units.some(u => u.hex.q === n.q && u.hex.r === n.r)
     );
 
     if (neighbors.length > 0) {
-      // 海上移動が得意なユニット（倭寇など）は、海ヘックスを優先的に選ぶロジック
-      const isNaval = actor.figure.unit_stats?.type === "倭寇水軍" || actor.figure.unit_stats?.type === "水軍";
+      const bestHex = neighbors.sort((a, b) => getHexDistance(a, targetHex) - getHexDistance(b, targetHex))[0];
       
-      const bestHex = neighbors.sort((a, b) => {
-        const distA = getHexDistance(a, targetHex);
-        const distB = getHexDistance(b, targetHex);
-        if (distA !== distB) return distA - distB;
-        
-        if (isNaval && gameData) {
-          const tileA = gameData.map_tiles.find(t => t.q === a.q && t.r === a.r);
-          const tileB = gameData.map_tiles.find(t => t.q === b.q && t.r === b.r);
-          if (tileA?.type === "sea" && tileB?.type !== "sea") return -1;
-          if (tileA?.type !== "sea" && tileB?.type === "sea") return 1;
-        }
-        return 0;
-      })[0];
-      
+      // 強行軍のメリット：一気に距離を詰めて攻撃圏内に入る
+      if (canForcedMarch && getHexDistance(bestHex, targetHex) > 1 && dist > normalMov) {
+          return { type: "forced_march", targetHex: bestHex };
+      }
+
       return { type: "move", targetHex: bestHex };
     }
 

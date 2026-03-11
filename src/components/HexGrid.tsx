@@ -13,10 +13,12 @@ interface HexGridProps {
   units: Unit[];
   selectedUnitId: number | null;
   reachableHexes: Hex[];
+  hoveredHex: Hex | null;
   onHexClick: (hex: Hex) => void;
+  onHexHover: (hex: Hex | null) => void;
 }
 
-export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHexClick }: HexGridProps) {
+export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, hoveredHex, onHexClick, onHexHover }: HexGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -28,35 +30,30 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw Map
-    for (let q = -2; q <= 8; q++) {
-      for (let r = -2; r <= 8; r++) {
-        // Draw tiles within a sensible range for Kyushu
+    for (let q = -5; q <= 12; q++) {
+      for (let r = -5; r <= 12; r++) {
         const tile = (gameData.map_tiles || []).find(t => t.q === q && t.r === r);
         
-        // --- 九州の地形生成ロジック ---
-        // データにタイル情報がない場合、座標から九州の形状を近似する
         let terrainType = "sea";
         if (tile) {
           terrainType = tile.type;
         } else {
-          // r座標(北から南)ごとに陸地(q)の範囲を指定して九州を形作る
+          // --- 予備ロジック：九州の正確な形状定義 ---
           const landRanges: Record<number, [number, number]> = {
-            [-2]: [4, 5], // 豊前・国東
-            [-1]: [3, 5], // 筑前・豊前
-            [0]:  [3, 5], // 筑前
-            [1]:  [1, 6], // 松浦〜豊後
-            [2]:  [1, 5], // 長崎〜肥後〜筑紫
-            [3]:  [1, 4], // 天草〜肥後
-            [4]:  [1, 3], // 肥後南部・日向
-            [5]:  [0, 2], // 薩摩・大隅
-            [6]:  [0, 1]  // 坊津・大隅半島
+            [-2]: [2, 4],   // 対馬・赤間関（分離のためqを限定）
+            [-1]: [99, 99], // 関門海峡（意図的に空に）
+            [0]:  [2, 5],   // 筑前・豊前
+            [1]:  [1, 6],   // 肥前・筑後・豊後
+            [2]:  [1, 7],   // 肥前・肥後・豊後
+            [3]:  [1, 8],   // 肥後・日向
+            [4]:  [1, 7],   // 肥後南部・日向
+            [5]:  [1, 6],   // 薩摩・大隅
+            [6]:  [1, 5]    // 薩摩南部
           };
 
           const range = landRanges[r];
           if (range && q >= range[0] && q <= range[1]) {
             terrainType = "plain";
-          } else {
-            terrainType = "sea";
           }
         }
         
@@ -64,11 +61,21 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
         let color = terrain?.color || (terrainType === "sea" ? "#81d4fa" : "#aed581");
 
         const loc = (gameData.key_locations || []).find(l => l.coords.q === q && l.coords.r === r);
-        if (loc) color = "#ffeb3b"; // Cities/Forts in yellow
+        if (loc) color = "#ffeb3b";
         
         drawHex(ctx, q, r, color, "fill");
         ctx.strokeStyle = "rgba(0,0,0,0.05)";
         drawHex(ctx, q, r, "", "stroke");
+
+        // Highlight Hovered Hex
+        if (hoveredHex && hoveredHex.q === q && hoveredHex.r === r) {
+          ctx.globalAlpha = 0.3;
+          drawHex(ctx, q, r, "white", "fill");
+          ctx.globalAlpha = 1.0;
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "white";
+          drawHex(ctx, q, r, "", "stroke");
+        }
 
         // Draw Reachable Highlight
         const isReachable = reachableHexes.some(h => h.q === q && h.r === r);
@@ -89,6 +96,7 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
     }
 
     // Draw Units
+    // ... (rest of the draw logic remains the same)
     units.forEach((unit) => {
       let baseColor = "#ffffcc";
       if (unit.figure.faction.includes("南朝")) baseColor = "#ffcccc";
@@ -118,7 +126,7 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
       ctx.fillRect(center.x - barWidth / 2, center.y + 5, barWidth * hpPercent, 4);
       ctx.strokeRect(center.x - barWidth / 2, center.y + 5, barWidth, 4);
     });
-  }, [units, selectedUnitId, gameData]);
+  }, [units, selectedUnitId, gameData, reachableHexes, hoveredHex]);
 
   function drawHex(ctx: CanvasRenderingContext2D, q: number, r: number, color: string, mode: "fill" | "stroke") {
     const center = hexToPixel(q, r);
@@ -146,12 +154,26 @@ export function HexGrid({ gameData, units, selectedUnitId, reachableHexes, onHex
     onHexClick(hex);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const hex = pixelToHex(x, y);
+    onHexHover(hex);
+  };
+
+  const handleMouseLeave = () => {
+    onHexHover(null);
+  };
+
   return (
     <canvas 
       ref={canvasRef} 
       width={CANVAS_WIDTH} 
       height={CANVAS_HEIGHT} 
-      onClick={handleClick} 
+      onClick={handleClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     />
   );
 }

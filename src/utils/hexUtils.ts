@@ -1,22 +1,28 @@
 import { Hex, Pixel } from "../types";
 
-export const HEX_SIZE = 35;
+export const HEX_SIZE = 25; // 少し大きくして見やすく
 export const CANVAS_WIDTH = 800;
 export const CANVAS_HEIGHT = 700;
 
-export function hexToPixel(q: number, r: number): Pixel {
-  const x = HEX_SIZE * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r) + CANVAS_WIDTH / 2 - 150;
-  const y = HEX_SIZE * ((3 / 2) * r) + CANVAS_HEIGHT / 2 - 200;
+export const hexToPixel = (q: number, r: number): Pixel => {
+  // 九州の中心座標 (q: 3, r: 2 付近) を画面中央に持ってくる
+  const offsetX = CANVAS_WIDTH / 2 - 150; 
+  const offsetY = CANVAS_HEIGHT / 2 - 150;
+  const x = HEX_SIZE * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r) + offsetX;
+  const y = HEX_SIZE * ((3 / 2) * r) + offsetY;
   return { x, y };
-}
+};
 
-export function pixelToHex(x: number, y: number): Hex {
-  const adjustedX = x - (CANVAS_WIDTH / 2 - 150);
-  const adjustedY = y - (CANVAS_HEIGHT / 2 - 200);
+export const pixelToHex = (x: number, y: number): Hex => {
+  const offsetX = CANVAS_WIDTH / 2 - 150;
+  const offsetY = CANVAS_HEIGHT / 2 - 150;
+  const adjustedX = x - offsetX;
+  const adjustedY = y - offsetY;
   const q = ((Math.sqrt(3) / 3) * adjustedX - (1 / 3) * adjustedY) / HEX_SIZE;
   const r = ((2 / 3) * adjustedY) / HEX_SIZE;
   return cubeToAxial(cubeRound({ x: q, y: -q - r, z: r }));
-}
+};
+
 
 export function cubeRound(cube: { x: number; y: number; z: number }) {
   let rx = Math.round(cube.x);
@@ -51,10 +57,11 @@ export function getReachableHexes(
   start: Hex, 
   movement: number, 
   getCost: (h: Hex) => number,
-  occupiedHexes: Hex[]
+  occupiedHexes: Hex[],
+  isWinter: boolean = false
 ): Hex[] {
   const visited: Record<string, number> = {};
-  const reachable: Hex[] = [];
+  const reachable: { hex: Hex; cost: number }[] = [];
   const queue: { hex: Hex; cost: number }[] = [{ hex: start, cost: 0 }];
 
   visited[`${start.q},${start.r}`] = 0;
@@ -63,37 +70,36 @@ export function getReachableHexes(
     const { hex, cost } = queue.shift()!;
     
     if (cost > 0) {
-      reachable.push(hex);
+      reachable.push({ hex, cost });
     }
 
     const neighbors = getNeighbors(hex);
     for (const neighbor of neighbors) {
-      const terrainCost = getCost(neighbor);
-      // 通行不能な地形（コストが非常に高い、または負の値など）を考慮
-      if (terrainCost < 0 || terrainCost > movement) continue;
+      let terrainCost = getCost(neighbor);
+      
+      // 冬季の山岳ペナルティ (system_rules に基づく)
+      if (isWinter && terrainCost >= 3) {
+        terrainCost += 2; // 山岳コストがさらに増加
+      }
+
+      if (terrainCost < 0 || terrainCost > 10) continue; // 通行不能な地形
       
       const newCost = cost + terrainCost;
       if (newCost <= movement) {
         const key = `${neighbor.q},${neighbor.r}`;
-        // 既に訪問済みで、より低いコストで到達可能な場合はスキップ
+        const isOccupied = occupiedHexes.some(o => o.q === neighbor.q && o.r === neighbor.r);
+        
         if (visited[key] === undefined || newCost < visited[key]) {
-          // 他のユニットがいるマスは通過可能だが、そこを目的地にはできない（ゲームルールにより調整可能）
-          // 今回は「通過可能だが止まれない」ではなく、シンプルに「他ユニットがいるマスは除外」する。
-          const isOccupied = occupiedHexes.some(o => o.q === neighbor.q && o.r === neighbor.r);
-          
           visited[key] = newCost;
-          if (!isOccupied) {
-            queue.push({ hex: neighbor, cost: newCost });
-          } else {
-            // 他ユニットがいるマスは通過はできるが止まれない仕様にする場合：
-            // queue.push({ hex: neighbor, cost: newCost });
-            // ただし reachable には追加しないように調整が必要。
-            // ここではシンプルに「他ユニットがいるマスは進入不可」として扱う。
-          }
+          // ユニットがいるマスは通過はできるが止まれない
+          queue.push({ hex: neighbor, cost: newCost });
         }
       }
     }
   }
 
-  return reachable;
+  // 他のユニットがいるマスを目的地から除外
+  return reachable
+    .filter(r => !occupiedHexes.some(o => o.q === r.hex.q && o.r === r.hex.r))
+    .map(r => r.hex);
 }

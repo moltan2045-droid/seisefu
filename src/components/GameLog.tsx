@@ -4,8 +4,9 @@ interface GameLogProps {
 
 export function GameLog({ log }: GameLogProps) {
   return (
-    <div className="info-panel">
-      <p><strong>戦況ログ:</strong> {log}</p>
+    <div className="game-log">
+      <p><strong>戦況ログ:</strong></p>
+      <p>{log}</p>
     </div>
   );
 }

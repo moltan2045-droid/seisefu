@@ -269,5 +269,21 @@
         { "name": "大友氏時", "q": 6, "r": 1 },
         { "name": "足利直冬", "q": 5, "r": 2 },
         { "name": "島津氏久", "q": 1, "r": 5 }
-    ]
+    ],
+    "system_rules": {
+        "movement": {
+            "standard_infantry": { "min_km": 20, "max_km": 30, "hex_cost": 1.0 },
+            "standard_cavalry": { "min_km": 30, "max_km": 40, "hex_cost": 0.8 },
+            "forced_march": { "multiplier": 2.0, "stamina_cost": 50 }
+        },
+        "seasonal_effects": [
+            { "months": [5, 6], "name": "田植え", "penalty": "mobilization" },
+            { "months": [9, 10], "name": "稲刈り", "bonus": "logistics" },
+            { "months": [12, 1, 2], "name": "冬", "penalty": "mountain_cost" }
+        ],
+        "logistics": {
+            "hanzei_factor": 0.5,
+            "karita_recovery": 20
+        }
+    }
 }

@@ -9,6 +9,12 @@ export interface UnitStats {
   rng: number;
 }
 
+export interface Vassal {
+  name: string;
+  power: number;
+  role: string;
+}
+
 export interface Figure {
   name: string;
   faction: string;
@@ -18,7 +24,9 @@ export interface Figure {
   actions: string[];
   stats_hint: string;
   ai_archetype?: string;
-  // Note: relationships is in data.json but not currently in lib.rs
+  appearance_year?: number;
+  appearance_coords?: Coords;
+  vassals?: Vassal[];
 }
 
 export interface Event {
@@ -95,6 +103,15 @@ export interface Unit {
 }
 
 export type Turn = "South" | "North" | "Third" | "Independent";
+
+export type Season = "Spring" | "Summer" | "Autumn" | "Winter";
+
+export interface GameState {
+  year: number;
+  season: Season;
+  turn: Turn;
+  log: string[];
+}
 
 export interface Pixel {
   x: number;

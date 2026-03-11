@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>game-engine</title>
+  </head>
+  <body>
+    <canvas id="game-canvas" width="800" height="600"></canvas>
+    <script type="module">
+      import init, { greet } from './pkg/game-engine.js';
+      async function run() {
+        await init();
+        console.log(greet());
+      }
+      run();
+    </script>
+  </body>
+</html>
